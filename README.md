@@ -85,66 +85,34 @@ In the context of AI and linguistics, a corpus is simply a large, structured col
 
 ##  Results
 
+### Training with 10,000 Words
 
-### Training With 1000 Random Words
-
-Early results for training with 1000 random words from the cmudict file and epochs set to 500 are shown below for the words cat, hello and world.
-```
-Word = "cat" Predicted phonemes (word sounds) = QList("K", "T")
-Word = "hello" Predicted phonemes (word sounds) = QList("?", "EH1", "L", "?")
-Word = "world" Predicted phonemes (word sounds) = QList("?", "?", "L", "D")
-```
-For cat we would expect "K" "AE1"  and "T" and so the phoneme prediction for the middle character based on its neighbors is missing. The "?" indicates an unknown phoneme. However, training with 1000 random words  set show promising results indicating that the sliding window approach for capturing character context appears to be working. 
-
-### Training with 5000 Random Words
-
-With 5000 random words I was able to get better results and so the  number of words used for training is important. The results for the words cat and world are shown below.
-
-```
-Top Prediction: "K" Confidence: "91.9" %
-Top Prediction: "AA1" Confidence: "37.7" %
-Top Prediction: "T" Confidence: "99.0" %
-Word = "cat" Predicted phonemes (word sounds) = QList("K", "AA1", "T")
-Top Prediction: "W" Confidence: "88.1" %
-Top Prediction: "_" Confidence: "98.9" %
-Top Prediction: "ER1" Confidence: "52.9" %
-Top Prediction: "L" Confidence: "99.1" %
-Top Prediction: "D" Confidence: "92.8" %
-Word = "world" Predicted phonemes (word sounds) = QList("W", "ER1", "L", "D")
-```
-The second phoneme  "AA1" in the word "cat" is now present but the prediction has  a low confidence below 38%.
-
-When doing some more runs with 5000 random words I did have successes with the words "cat" and "Five" which shows that the network understands simple consonant-vowel-consonant (CVC) structures. However with "birthday" (B ER1 T ? D ? ?) the network struggled with the th digraph and the ending ay. Sometimes it would be nearly correct. A typical result is shown below. 
-```
-Top Prediction: "B" Confidence: "99.5" %
-Top Prediction: "_" Confidence: "99.6" %
-Top Prediction: "ER1" Confidence: "66.7" %
-Top Prediction: "R" Confidence: "25.8" %
-Top Prediction: "TH" Confidence: "81.6" %
-Top Prediction: "D" Confidence: "98.6" %
-Low confidence! Top 3:  "D" ( 0.11196 )  "_" ( 0.0884965 )  "AE2" ( 0.0265019 )
-Low confidence! Top 3:  "AO2" ( 0.00374544 )  "AE2" ( 0.00237519 )  "AW1" ( 0.00137518 )
-Word = "birthday" Predicted phonemes (word sounds) = QList("B", "ER1", "R", "TH", "D", "?", "?")
-```
-With a 5,000-word dataset, the letter y at the end of a word might only appear a few dozen times and so the neural network needs more "evidence" to predict the phonemes for birthday.
-
-### Training with 10,000 Mandatory Plus Random Words
-
-Obviously the neural network needs to be trained with more words. Rather that just load an increased number diverse random words I added some mandatory words so that I could investigate the predictions for these words and other similar words (e.g. cat and hat)
-
+Results for training with 10,000 words from the cmudict file and epochs set to 500 are shown below.  Rather that just load 10,000 diverse random words I added some mandatory words so that I could investigate the predictions for these words and other similar words.
 ```
 QStringList mandatoryWords = {"cat", "dog", "wednesday", "hello", "world", "eleventh", "march", "time"};
 ```
-I also added all the [phoneme symbols](https://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict/cmudict-0.7b.symbols) used by the CMU dictionary pronunciation corpus.
+I added all the [phoneme symbols](https://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict/cmudict-0.7b.symbols) used by the CMU dictionary pronunciation corpus.
 
-Results were mixed. The word dog was predicted successfully.
+Results were mixed. All phonemes for the word dog were predicted successfully.
 ```
 Top Prediction: "D" Confidence: "100.0" %
 Top Prediction: "AA1" Confidence: "58.4" %
 Top Prediction: "G" Confidence: "97.8" %
 Word = "dog" Predicted phonemes (word sounds) = QList("D", "AA1", "G")
 ```
-However the prediction for the word hello was still missing phonemes.
+I was expecting D AO1 G but the result is very close.
+
+The phoneme predictions for the word cat are shown below.
+
+```
+Low confidence! Top 3:  "CH" ( 0.00606208 )  "AH2" ( 0.00279973 )  "HH" ( 0.00180787 )
+Top Prediction: "AE1" Confidence: "97.6" %
+Low confidence! Top 3:  "EY0" ( 0.00713005 )  "AW1" ( 0.00332639 )  "AW0" ( 0.00303057 )
+Word = "cat" Predicted phonemes (word sounds) = QList("?", "AE1", "?")
+```
+The neural network does not have enough confidence to predict the first and last phonemes as the phonemes for cat which should be K AE1 T. The "?" indicates an unknown phoneme.
+
+The prediction for the word hello is also missing phonemes.
 
 ```
 Top Prediction: "HH" Confidence: "99.7" %
@@ -154,9 +122,6 @@ Low confidence! Top 3:  "AH0" ( 0.0065182 )  "EH0" ( 0.00462847 )  "EH2" ( 0.004
 Low confidence! Top 3:  "AO2" ( 0.0126723 )  "AH0" ( 0.00462215 )  "AO0" ( 0.0037352 )
 Word = "hello" Predicted phonemes (word sounds) = QList("HH", "?", "EH1", "?", "?")
 ```
-
-Other words like cat which were successfully predicted with when training with 5000 Random Words were not successfully predicted indicating that the a different set of random words were used in the training leading to a lower confidence for the phonemes for these words which was disappointing.
-
 The prediction for the word birthday was:
 ```
 Top Prediction: "B" Confidence: "99.8" %
@@ -169,20 +134,20 @@ Top Prediction: "D" Confidence: "54.0" %
 Top Prediction: "EY2" Confidence: "51.1" %
 Word = "birthday" Predicted phonemes (word sounds) = QList("B", "?", "ER1", "?", "?", "D", "D", "EY2")
 ```
-The "day" part of the word birthday was now predicted but there are still missing phonemes.
+The "day" part of the word birthday is predicted but there are missing phonemes.
 
 
 ### Training With More Words
 
-The [NetTalk](https://en.wikipedia.org/wiki/NETtalk_(artificial_neural_network)) artificial neural network for speech synthesis developed in the 1980s used 20,000 words in its dataset (a different pronunciation corpus to CMUdict). Training my neural network with 20,000 word would take many hours on my home computer with a moderate processor. Although 20,000 words would give the network a much larger "corpus" to learn from, allowing it to see and understand more character combinations it would not see all patterns and I expect training with  all 134,000 words in the CMUdict pronunciation corpus is required which is not practical on my home computer due to processor limitations.  A more powerful system is needed and parallel (batch) training would most likely be required. 
+The [NetTalk](https://en.wikipedia.org/wiki/NETtalk_(artificial_neural_network)) artificial neural network for speech synthesis developed in the 1980s used 20,000 words in its dataset (a different pronunciation corpus to CMUdict). Training my neural network with 20,000 word would take many hours on my home computer with a moderate processor. Although 20,000 words would give the network a much larger "corpus" to learn from, allowing it to see and understand more character combinations it would not see all patterns and I expect training with  all 134,000 words in the CMUdict pronunciation corpus is required which is not practical on my home computer due to processor limitations.  A more powerful system is needed and parallel (batch) training would most likely be required. The other thing that could be tried would be a reduced phoneme set.
 
 Currently, I use QtConcurrent::run() to offload the entire training process to one background thread. This makes the GUI "concurrent" so that is does not freeze. Training is not split across multiple cores and so is not done in parallel. To use more cores parallel training (batch training) code would be need to be implemented which would require calculating weights and gradients simultaneously on different cores and then average them. The problem with this is that Neural Networks usually need to update weights and gradients sequentially (each step depends on the last) meaning that standard backpropagation is naturally a single-threaded task. For a project of this scale, sticking to one thread is safer and prevents complex memory "race conditions" which are an inherent problem when implementing parallel processing.
 
 ### Results Summary
 
-The results show that increasing the training data count changes word prediction as the neural network sees more evidence of how to predict word phonemes. However, even with training with 10,000 diverse random words is not enough to successfully transcribe many common words like "birthday" as the the neural network needs see more word patterns to predict the phonemes. Training runs can take many hours on my home computer system and so increasing the number of words to the full CMUdict word count (134,000 words) is not practical.  Also I am not certain if a trained neural network would capture all English word pronunciations
+Training with 10,000 diverse random words is not enough to successfully transcribe many common words like "birthday" as the the neural network needs see more word patterns to predict the phonemes. Training runs can take many hours on my home computer system and so increasing the number of words to the full CMUdict word count (134,000 words) is not practical.  Also I am not certain if a trained neural network would capture all English word pronunciations
 
-The decision tree G2P algorithm used with [Talk Calendar](https://github.com/crispinprojects/talkcalendar) is a better method than the sliding window neural network approach described here. With words like "birthday" the decision tree uses rules specifically written to transcribe it. Even when the decision tree was trained with all 134,000 words in the CMUdict pronunciation corpus I still had to modify by hand the decision tree rules to get better word pronunciations. 
+The decision tree G2P algorithm currently used with [Talk Calendar](https://github.com/crispinprojects/talkcalendar) is a better method than the sliding window neural network approach described here. With words like "birthday" the decision tree uses rules specifically written to transcribe it. Even when the decision tree was trained with all 134,000 words in the CMUdict pronunciation corpus I still had to modify by hand the decision tree rules to get better word pronunciations. 
 
 ##  How to Compile and Run
 
@@ -220,10 +185,7 @@ RNNs (Recurrent Neural Networks) are significantly more complex to code from scr
 Transformers (like Gemini or GPT) use sequential memory for context. With transformers instead of reading character-by-character and trying to remember the past, a transformer looks at every character in the sequence simultaneously and uses "attention weights" to decide which other characters are most relevant to the one it is currently processing. Programming a transformer neural network in C++ is challenging due to the complexity of the architecture and attention mechanisms. There is more information [here](https://www.youtube.com/watch?v=Nw_PJdmydZY). For the hobby project Talk Calendar using transformers is not necessary to achieve G2P.
 
 ---
-
-## Project Status
-
-Project finished. 
+ 
 
 ## Weblinks
 
